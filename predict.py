@@ -21,7 +21,9 @@ class Predict:
         # model设定
         if 'model' in kwargs:
             if kwargs['model'] == 'unet':
-                self.model = UNet().to(self.device)
+                self.model = UNet2D().to(self.device)
+            elif kwargs['model'] == 'unet3d':
+                self.model = UNet3D().to(self.device)
             else:
                 print('错误：不存在的模型。')
                 exit(3)

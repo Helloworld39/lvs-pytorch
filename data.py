@@ -10,7 +10,7 @@ import SimpleITK as sitk
 from torch.utils.data import TensorDataset, DataLoader
 
 
-def confirm_file_suffix(filename, suffix: list[str]) -> bool:
+def confirm_file_suffix(filename, suffix) -> bool:
     # 限制文件的后缀名
     for suf in suffix:
         if filename[-len(suf):] == suf:
@@ -118,7 +118,7 @@ def dataset_dir_manager(dataset_name, where='autodl', is_root=False) -> Union[st
         if where == 'local':
             dataset_root = 'D:/Github/MSDC'
         else:
-            dataset_root = '/root/autodl-tmp/dataset/msdc'
+            dataset_root = '/root/autodl-tmp/msdc'
     else:
         print('没有该数据集', dataset_name)
         exit(-1)
@@ -139,10 +139,10 @@ def read_image_to_tensor(image_dir: str) -> torch.Tensor:
     return tsr
 
 
-def create_4d_tensor_dataset(dataset_name, data_dir: tuple[str, str], start, end):
+def create_4d_tensor_dataset(dataset_name, data_dir, start, end):
     x_dir, y_dir = data_dir
     x_list, y_list = [], []
-    for i in range(start, end+1):
+    for i in range(start, end):
         image_x_dir = os.path.join(x_dir, str(i)+'.png')
         image_y_dir = os.path.join(y_dir, str(i)+'.png')
         x_list.append(torch.unsqueeze(read_image_to_tensor(image_x_dir), 0))
@@ -156,16 +156,16 @@ def create_4d_tensor_dataset(dataset_name, data_dir: tuple[str, str], start, end
     print('已生成数据集', dataset_name)
 
 
-def create_5d_tensor_dataset(dataset_name, data_dir: tuple[str, str], patch_size, start, end):
+def create_5d_tensor_dataset(dataset_name, data_dir, patch_size, start, end):
     x_dir, y_dir = data_dir
     i, j = 0, start
     x_list, y_list = [], []
     x_patch, y_patch = [], []
-    while j <= end:
+    while j < end:
         if i == 0:
             x_patch, y_patch = [], []
         image_x_dir = os.path.join(x_dir, str(j)+'.png')
-        image_y_dir = os.path.join(y_dir, str(j)+',png')
+        image_y_dir = os.path.join(y_dir, str(j)+'.png')
         x_patch.append(torch.unsqueeze(read_image_to_tensor(image_x_dir), 0))
         y_patch.append(torch.unsqueeze(read_image_to_tensor(image_y_dir), 0))
 
