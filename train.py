@@ -104,7 +104,6 @@ class Train:
 
         self.loss_arr = {'train_loss': [], 'valid_loss': []}
 
-
     def train(self):
         print('device: ', self.device)
         if (self.model_dir is not None) and (os.path.exists(self.model_dir)):  # 载入原有模型继续训练

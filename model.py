@@ -36,10 +36,10 @@ class Up(nn.Module):
                                       nn.ReLU())
         else:
             self.up = nn.Sequential(nn.ConvTranspose3d(in_channels, out_channels, 4, 2, 1, bias=False),
-                                    nn.BatchNorm2d(out_channels),
+                                    nn.BatchNorm3dd(out_channels),
                                     nn.ReLU())
             self.conv = nn.Sequential(nn.Conv3d(out_channels, out_channels, 3, padding=1, bias=False),
-                                      nn.BatchNorm2d(out_channels),
+                                      nn.BatchNorm3d(out_channels),
                                       nn.ReLU())
 
     def forward(self, x, x1):
