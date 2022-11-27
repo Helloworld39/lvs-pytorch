@@ -69,10 +69,12 @@ class UNet2D(nn.Module):
         self.up1 = Up(64, 32, True)
         if out_channels == 1:
             self.output = nn.Sequential(nn.Conv2d(32, 1, 3, padding=1, bias=False),
+                                        nn.ReLU(),
                                         nn.Conv2d(1, 1, 1),
                                         nn.Sigmoid())
         elif out_channels > 1:
-            self.output = nn.Sequential(nn.Conv2d(32, out_channels, padding=1, bias=False),
+            self.output = nn.Sequential(nn.Conv2d(32, out_channels, 3, padding=1, bias=False),
+                                        nn.ReLU(),
                                         nn.Conv2d(1, 1, 1),
                                         nn.Softmax())
         else:
@@ -96,7 +98,7 @@ class UNet3D(nn.Module):
     def __init__(self, in_channels=1, out_channels=1):
         super().__init__()
         self.input = nn.Sequential(nn.Conv3d(in_channels, 32, 3, padding=1, bias=False),
-                                   nn.BatchNorm2d(32),
+                                   nn.BatchNorm3d(32),
                                    nn.LeakyReLU())
         self.down1 = Down(32, 64)
         self.down2 = Down(64, 128)
@@ -106,12 +108,24 @@ class UNet3D(nn.Module):
         self.up1 = Up(64, 32)
         if out_channels == 1:
             self.output = nn.Sequential(nn.Conv3d(32, 1, 3, padding=1, bias=False),
+                                        nn.ReLU(),
                                         nn.Conv3d(1, 1, 1),
                                         nn.Sigmoid())
         elif out_channels > 1:
-            self.output = nn.Sequential(nn.Conv3d(32, out_channels, padding=1, bias=False),
+            self.output = nn.Sequential(nn.Conv3d(32, out_channels, 3, padding=1, bias=False),
+                                        nn.ReLU(),
                                         nn.Conv3d(1, 1, 1),
                                         nn.Softmax())
         else:
             print('错误：网络参数[out_classes]设置错误，应当≥1。')
             exit(-1)
+
+    def forward(self, x):
+        x1 = self.input(x)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
+        x = self.down3(x3)
+        x = self.up3(x, x3)
+        x = self.up2(x, x2)
+        x = self.up1(x, x1)
+        return self.output(x)
