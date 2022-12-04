@@ -24,6 +24,8 @@ class Predict:
                 self.model = UNet2D().to(self.device)
             elif kwargs['model'] == 'unet3d':
                 self.model = UNet3D().to(self.device)
+            elif kwargs['model'] == 'unet_2in_1out':
+                self.model = UNet2D(in_channels=2, out_channels=1).to(self.device)
             else:
                 print('错误：不存在的模型。')
                 exit(3)

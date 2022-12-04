@@ -155,4 +155,5 @@ cython_debug/
 .idea/
 
 # some utils files
-
+test.py
+dcm_kit.py
