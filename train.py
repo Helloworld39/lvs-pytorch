@@ -1,6 +1,5 @@
 import os
 import time
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -26,6 +25,8 @@ class Train:
                 self.model = UNet2D().to(self.device)
             elif kwargs['model'] == 'unet3d':
                 self.model = UNet3D().to(self.device)
+            elif kwargs['model'] == 'unet_2in_1out':
+                self.model = UNet2D(in_channels=2, out_channels=1).to(self.device)
             else:
                 print('错误：不存在的模型。')
                 exit(3)
@@ -63,7 +64,7 @@ class Train:
         if 'scheduler' in kwargs:
             if kwargs['scheduler'] == 'step_lr':
                 # step_size设置，默认为50
-                self.step_size = kwargs['step_size'] if 'step_lr' in kwargs else 100
+                self.step_size = kwargs['step_size'] if 'step_lr' in kwargs else 50
                 # gamma设置，默认为0.5
                 self.gamma = kwargs['gamma'] if 'gamma' in kwargs else 0.5
 

@@ -3,27 +3,38 @@ from train import Train
 from predict import Predict
 
 
-dataset_root_dir = data.dataset_dir_manager('msdc', is_root=True)
-train_dataset = data.data_loader(dataset_root_dir+'/msdc_5d_train.pth', 8, True)
-valid_dataset = data.data_loader(dataset_root_dir+'/msdc_5d_valid.pth', 8)
+dataset_name = 'msdc'
 
-train = Train(model='unet3d',
+slice_index_list = data.get_ct_index(dataset_name)
+dataset_root_dir = data.dataset_dir_manager(dataset_name, is_root=True)
+
+data.create_4d_tensor_dataset(dataset_root_dir+'/train.pth', dataset_root_dir,
+                              slice_index_list[0], slice_index_list[101], input_type=1)
+data.create_4d_tensor_dataset(dataset_root_dir+'/valid.pth', dataset_root_dir,
+                              slice_index_list[101], slice_index_list[103], input_type=1)
+data.create_4d_tensor_dataset(dataset_root_dir+'/predict.pth', dataset_root_dir,
+                              slice_index_list[298], slice_index_list[303], input_type=1)
+
+train_dataset = data.data_loader(dataset_root_dir+'/train.pth', 16, True)
+valid_dataset = data.data_loader(dataset_root_dir+'/valid.pth', 16)
+
+train = Train(model='unet_2in_1out',
               criterion='bce',
               optimizer='adam', lr=1e-4,
               scheduler='step_lr',
-              epochs=100,
-              checkpoint_dir=dataset_root_dir+'checkpoint/unet3d_msdc_100_8',
-              model_dir='./models/unet3d_msdc_100_8.pth',
+              epochs=150,
+              checkpoint_dir=dataset_root_dir+'checkpoint/unet_msdc_150_pj',
+              model_dir='./models/unet_msdc_150_pj.pth',
               train_datasets=train_dataset,
               valid_datasets=valid_dataset)
 train.train()
 train.show_loss_arr()
 
-test_dataset = data.data_loader(dataset_root_dir+'/msdc_5d_test.pth', 8)
-predict = Predict(model='unet3d',
+test_dataset = data.data_loader(dataset_root_dir+'/predict.pth', 16)
+predict = Predict(model='unet_2in_1out',
                   criterion='bce',
-                  model_dir='./models/unet3d_msdc_100_8.pth',
-                  output_dir='/root/autodl-tmp/msdc/out/unet3d_msdc_100_8',
+                  model_dir='./models/unet_msdc_150_pj.pth',
+                  output_dir='/root/autodl-tmp/msdc/out/unet_msdc_150_pj',
                   output_index=data.get_ct_index('msdc')[298],
                   pre_datasets=test_dataset)
 predict.predict()

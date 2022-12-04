@@ -139,14 +139,39 @@ def read_image_to_tensor(image_dir: str) -> torch.Tensor:
     return tsr
 
 
-def create_4d_tensor_dataset(dataset_name, data_dir, start, end):
+def create_4d_tensor_dataset(dataset_name, data_dir, start, end, **kwargs):
+    input_type = 0
+    if 'input_type' in kwargs:
+        input_type = kwargs['input_type']
+        if type(input_type) is not int:
+            input_type = 0
     x_dir, y_dir = data_dir
     x_list, y_list = [], []
     for i in range(start, end):
         image_x_dir = os.path.join(x_dir, str(i)+'.png')
         image_y_dir = os.path.join(y_dir, str(i)+'.png')
-        x_list.append(torch.unsqueeze(read_image_to_tensor(image_x_dir), 0))
-        y_list.append(torch.unsqueeze(read_image_to_tensor(image_y_dir), 0))
+        if input_type == 1:
+            temp_x_dir = os.path.join(x_dir, 'image_pj', str(i)+'.png')
+            temp_y_dir = os.path.join(y_dir, 'label_pj', str(i)+'.png')
+            x_arr = torch.cat([read_image_to_tensor(image_x_dir), read_image_to_tensor(temp_x_dir)], dim=0)
+            y_arr = torch.cat([read_image_to_tensor(image_y_dir), read_image_to_tensor(temp_y_dir)], dim=0)
+            x_list.append(torch.unsqueeze(x_arr, 0))
+            y_list.append(torch.unsqueeze(y_arr, 0))
+        elif input_type == 2:
+            temp_x_dir = os.path.join(x_dir, 'image_pj_16', str(i) + '.png')
+            temp_y_dir = os.path.join(y_dir, 'label_pj_16', str(i) + '.png')
+            x_arr = torch.cat([read_image_to_tensor(image_x_dir), read_image_to_tensor(temp_x_dir)], dim=0)
+            y_arr = torch.cat([read_image_to_tensor(image_y_dir), read_image_to_tensor(temp_y_dir)], dim=0)
+            x_list.append(torch.unsqueeze(x_arr, 0))
+            y_list.append(torch.unsqueeze(y_arr, 0))
+        else:
+            x_arr = read_image_to_tensor(image_x_dir)
+            y_arr = read_image_to_tensor(image_y_dir)
+            x_list.append(torch.unsqueeze(x_arr, 0))
+            y_list.append(torch.unsqueeze(y_arr, 0))
+
+        x_list.append(torch.unsqueeze(x_arr, 0))
+        y_list.append(torch.unsqueeze(y_arr, 0))
 
     x_list = torch.cat(x_list, dim=0)
     y_list = torch.cat(y_list, dim=0)
