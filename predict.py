@@ -1,10 +1,9 @@
 import os.path
 import torch
 import torch.nn as nn
-from torchvision.transforms import transforms
 import data
-
 from model import UNet2D, UNet3D
+from torchvision.transforms import transforms
 
 
 class Predict:
@@ -39,6 +38,8 @@ class Predict:
                 self.criterion = nn.BCELoss().to(self.device)
             elif kwargs['criterion'] == 'ce':
                 self.criterion = nn.CrossEntropyLoss().to(self.device)
+            elif kwargs['criterion'] == 'mse':
+                self.criterion = nn.MSELoss().to(self.device)
             else:
                 print('错误：不存在的损失函数。')
                 exit(3)
@@ -71,6 +72,7 @@ class Predict:
         print('device: ', self.device)
         step = 0
         test_loss = 0
+        self.model.load_state_dict(torch.load(self.model_dir))
         with torch.no_grad():
             self.model.eval()
             for _, (t_x, t_y) in enumerate(self.pre_datasets):
@@ -84,17 +86,18 @@ class Predict:
                 loss = self.criterion(out, t_y)
                 test_loss += loss.item()
 
-                self.save_result(out.item())
+                self.save_result(out)
 
-            test_loss = test_loss / step
-            print('Test Loss: ', test_loss)
+        test_loss = test_loss / step
+        print('Test Loss: ', test_loss)
 
     def save_result(self, mat: torch.Tensor):
         output_index = self.output_index
         output_dir = self.output_dir
         to_image = transforms.ToPILImage()
-        print(mat.shape)
         for i in range(mat.shape[0]):
+            print(type(mat[i]))
             image = to_image(mat[i])
             image.save(os.path.join(output_dir, str(output_index)+'.png'))
             output_index += 1
+        self.output_index = output_index

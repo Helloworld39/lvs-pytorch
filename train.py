@@ -40,6 +40,8 @@ class Train:
                 self.criterion = nn.BCELoss().to(self.device)
             elif kwargs['criterion'] == 'ce':
                 self.criterion = nn.CrossEntropyLoss().to(self.device)
+            elif kwargs['criterion'] == 'mse':
+                self.criterion = nn.MSELoss().to(self.device)
             else:
                 print('错误：不存在的损失函数。')
                 exit(3)
@@ -138,8 +140,8 @@ class Train:
                 loss.backward()
                 self.optimizer.step()
 
-                if self.scheduler:
-                    self.scheduler.step()
+            if self.scheduler:
+                self.scheduler.step()
 
             epoch_loss = epoch_loss / step
             self.loss_arr['train_loss'].append(epoch_loss)

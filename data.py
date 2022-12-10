@@ -170,9 +170,6 @@ def create_4d_tensor_dataset(dataset_name, data_dir, start, end, **kwargs):
             x_list.append(torch.unsqueeze(x_arr, 0))
             y_list.append(torch.unsqueeze(y_arr, 0))
 
-        x_list.append(torch.unsqueeze(x_arr, 0))
-        y_list.append(torch.unsqueeze(y_arr, 0))
-
     x_list = torch.cat(x_list, dim=0)
     y_list = torch.cat(y_list, dim=0)
 

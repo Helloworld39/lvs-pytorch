@@ -4,16 +4,19 @@ from predict import Predict
 
 
 dataset_name = 'msdc'
+need_create_dataset = False
 
 slice_index_list = data.get_ct_index(dataset_name)
 dataset_root_dir = data.dataset_dir_manager(dataset_name, is_root=True)
+data_dir = data.dataset_dir_manager(dataset_name)
 
-data.create_4d_tensor_dataset(dataset_root_dir+'/train.pth', dataset_root_dir,
-                              slice_index_list[0], slice_index_list[101], input_type=1)
-data.create_4d_tensor_dataset(dataset_root_dir+'/valid.pth', dataset_root_dir,
-                              slice_index_list[101], slice_index_list[103], input_type=1)
-data.create_4d_tensor_dataset(dataset_root_dir+'/predict.pth', dataset_root_dir,
-                              slice_index_list[298], slice_index_list[303], input_type=1)
+if need_create_dataset:
+    data.create_4d_tensor_dataset(dataset_root_dir+'/train.pth', data_dir,
+                                  slice_index_list[0], slice_index_list[101], input_type=1)
+    data.create_4d_tensor_dataset(dataset_root_dir+'/valid.pth', data_dir,
+                                  slice_index_list[101], slice_index_list[103], input_type=1)
+    data.create_4d_tensor_dataset(dataset_root_dir+'/predict.pth', data_dir,
+                                  slice_index_list[298], slice_index_list[303], input_type=1)
 
 train_dataset = data.data_loader(dataset_root_dir+'/train.pth', 16, True)
 valid_dataset = data.data_loader(dataset_root_dir+'/valid.pth', 16)

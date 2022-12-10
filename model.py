@@ -48,11 +48,6 @@ class Up(nn.Module):
         return self.conv(x)
 
 
-class FeatureGenerator(nn.Module):
-    def __init__(self, in_channels=1, out_channels=1):
-        super().__init__()
-
-
 class UNet2D(nn.Module):
     def __init__(self, in_channels=1, out_channels=1):
         super().__init__()
@@ -125,6 +120,48 @@ class UNet3D(nn.Module):
         x2 = self.down1(x1)
         x3 = self.down2(x2)
         x = self.down3(x3)
+        x = self.up3(x, x3)
+        x = self.up2(x, x2)
+        x = self.up1(x, x1)
+        return self.output(x)
+
+
+class ProjectionSegmentation(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.img_input = nn.Sequential(nn.Conv2d(1, 32, 3, padding=1, bias=False),
+                                       nn.BatchNorm2d(32),
+                                       nn.LeakyReLU())
+        self.img_down1 = Down(32, 64, True)
+        self.img_down2 = Down(64, 128, True)
+        self.img_down3 = Down(128, 256, True)
+        self.img_down4 = Down(256, 512, True)
+
+        self.pj_input = nn.Sequential(nn.Conv2d(1, 32, 3, padding=1, bias=False),
+                                      nn.BatchNorm2d(32),
+                                      nn.LeakyReLU())
+        self.pj_down1 = Down(32, 64, True)
+        self.pj_down2 = Down(64, 128, True)
+        self.pj_down3 = Down(128, 256, True)
+        self.pj_down4 = Down(256, 512, True)
+
+        self.up4 = Up(512, 256, True)
+        self.up3 = Up(256, 128, True)
+        self.up2 = Up(128, 64, True)
+        self.up1 = Up(64, 32, True)
+
+        self.output = nn.Sequential(nn.Conv2d(32, 1, 3, padding=1, bias=False),
+                                    nn.ReLU(),
+                                    nn.Conv2d(1, 1, 1),
+                                    nn.Sigmoid())
+
+    def forward(self, img, pj):
+        img_x1 = self.img_input(img)
+        img_x2 = self.img_down1(img_x1)
+        img_x3 = self.img_down2(img_x2)
+        img_x4 = self.img_down3(img_x3)
+        img_x5 = self.img_down4(img_x4)
+        x = self.up4(x, x4)
         x = self.up3(x, x3)
         x = self.up2(x, x2)
         x = self.up1(x, x1)
