@@ -25,32 +25,34 @@ class Down(nn.Module):
 
 
 class Up(nn.Module):
-    def __init__(self, in_channels, out_channels, is_2d=False):
+    def __init__(self, in_channels, out_channels, mid_channels=None, is_2d=False):
         super().__init__()
+        if not mid_channels:
+            mid_channels = in_channels
         if is_2d:
             self.up = nn.Sequential(nn.ConvTranspose2d(in_channels, out_channels, 4, 2, 1, bias=False),
                                     nn.BatchNorm2d(out_channels),
                                     nn.ReLU())
-            self.conv = nn.Sequential(nn.Conv2d(out_channels, out_channels, 3, padding=1, bias=False),
+            self.conv = nn.Sequential(nn.Conv2d(mid_channels, out_channels, 3, padding=1, bias=False),
                                       nn.BatchNorm2d(out_channels),
                                       nn.ReLU())
         else:
             self.up = nn.Sequential(nn.ConvTranspose3d(in_channels, out_channels, 4, 2, 1, bias=False),
                                     nn.BatchNorm3d(out_channels),
                                     nn.ReLU())
-            self.conv = nn.Sequential(nn.Conv3d(out_channels, out_channels, 3, padding=1, bias=False),
+            self.conv = nn.Sequential(nn.Conv3d(mid_channels, out_channels, 3, padding=1, bias=False),
                                       nn.BatchNorm3d(out_channels),
                                       nn.ReLU())
 
-    def forward(self, *args):
+    def forward(self, x, *args):
         """
         上采样执行
-        :param args: 参数量大于等于2，类型为torch.Tensor，第一个参数一定是上采样参数而非跳跃连接的参数
+        :param x: 参与上采样的参数（必要）
+        :param args: 参与跳跃连接的参数（至少1个）
         :return:
         """
-        args_list = list(args)
-        args_list[0] = self.up(args[0])
-        x = torch.cat(args_list, dim=1)
+        x = self.up(x)
+        x = torch.cat([x, *args], dim=1)
         return self.conv(x)
 
 
@@ -142,55 +144,6 @@ class UNet3D(nn.Module):
         return self.output(x)
 
 
-class ProjectionSegmentation(nn.Module):
+class DoubleEncoderSingleDecoderNetwork(nn.Module):
     def __init__(self):
         super().__init__()
-        self.img_input = nn.Sequential(nn.Conv2d(1, 32, 3, padding=1, bias=False),
-                                       nn.BatchNorm2d(32),
-                                       nn.LeakyReLU(),
-                                       nn.Conv2d(32, 32, 3, padding=1, bias=False),
-                                       nn.BatchNorm2d(32),
-                                       nn.LeakyReLU())
-        self.img_down1 = Down(32, 64, True)
-        self.img_down2 = Down(64, 128, True)
-        self.img_down3 = Down(128, 256, True)
-        self.img_down4 = Down(256, 512, True)
-
-        self.pj_input = nn.Sequential(nn.Conv2d(1, 32, 3, padding=1, bias=False),
-                                      nn.BatchNorm2d(32),
-                                      nn.LeakyReLU(),
-                                      nn.Conv2d(32, 32, 3, padding=1, bias=False),
-                                      nn.BatchNorm2d(32),
-                                      nn.LeakyReLU())
-        self.pj_down1 = Down(32, 64, True)
-        self.pj_down2 = Down(64, 128, True)
-        self.pj_down3 = Down(128, 256, True)
-        self.pj_down4 = Down(256, 512, True)
-
-        self.up4 = Up(512, 256, True)
-        self.up3 = Up(256, 128, True)
-        self.up2 = Up(128, 64, True)
-        self.up1 = Up(64, 32, True)
-
-        self.output = nn.Sequential(nn.Conv2d(32, 1, 3, padding=1, bias=False),
-                                    nn.BatchNorm2d(1),
-                                    nn.ReLU(),
-                                    nn.Conv2d(1, 1, 1),
-                                    nn.Sigmoid())
-
-    def forward(self, img, pj):
-        img_x1 = self.img_input(img)
-        img_x2 = self.img_down1(img_x1)
-        img_x3 = self.img_down2(img_x2)
-        img_x4 = self.img_down3(img_x3)
-        img_x5 = self.img_down4(img_x4)
-        pj_x1 = self.pj_input()
-        pj_x2 = self.pj_down1(pj_x1)
-        pj_x3 = self.pj_down2(pj_x2)
-        pj_x4 = self.pj_down3(pj_x3)
-        pj_x5 = self.pj_down4(pj_x4)
-        x = self.up4(x, x4)
-        x = self.up3(x, x3)
-        x = self.up2(x, x2)
-        x = self.up1(x, x1)
-        return self.output(x)
