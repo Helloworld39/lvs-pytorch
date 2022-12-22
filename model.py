@@ -42,9 +42,15 @@ class Up(nn.Module):
                                       nn.BatchNorm3d(out_channels),
                                       nn.ReLU())
 
-    def forward(self, x, x1):
-        x = self.up(x)
-        x = torch.cat([x, x1], dim=1)
+    def forward(self, *args):
+        """
+        上采样执行
+        :param args: 参数量大于等于2，类型为torch.Tensor，第一个参数一定是上采样参数而非跳跃连接的参数
+        :return:
+        """
+        args_list = list(args)
+        args_list[0] = self.up(args[0])
+        x = torch.cat(args_list, dim=1)
         return self.conv(x)
 
 
@@ -52,6 +58,9 @@ class UNet2D(nn.Module):
     def __init__(self, in_channels=1, out_channels=1):
         super().__init__()
         self.input = nn.Sequential(nn.Conv2d(in_channels, 32, 3, padding=1, bias=False),
+                                   nn.BatchNorm2d(32),
+                                   nn.LeakyReLU(),
+                                   nn.Conv2d(32, 32, 3, padding=1, bias=False),
                                    nn.BatchNorm2d(32),
                                    nn.LeakyReLU())
         self.down1 = Down(32, 64, True)
@@ -64,13 +73,15 @@ class UNet2D(nn.Module):
         self.up1 = Up(64, 32, True)
         if out_channels == 1:
             self.output = nn.Sequential(nn.Conv2d(32, 1, 3, padding=1, bias=False),
+                                        nn.BatchNorm2d(1),
                                         nn.ReLU(),
                                         nn.Conv2d(1, 1, 1),
                                         nn.Sigmoid())
         elif out_channels > 1:
             self.output = nn.Sequential(nn.Conv2d(32, out_channels, 3, padding=1, bias=False),
+                                        nn.BatchNorm2d(out_channels),
                                         nn.ReLU(),
-                                        nn.Conv2d(1, 1, 1),
+                                        nn.Conv2d(out_channels, out_channels, 1),
                                         nn.Softmax())
         else:
             print('错误：网络参数[out_classes]设置错误，应当≥1。')
@@ -94,6 +105,9 @@ class UNet3D(nn.Module):
         super().__init__()
         self.input = nn.Sequential(nn.Conv3d(in_channels, 32, 3, padding=1, bias=False),
                                    nn.BatchNorm3d(32),
+                                   nn.LeakyReLU(),
+                                   nn.Conv3d(32, 32, 3, padding=1, bias=False),
+                                   nn.BatchNorm2d(32),
                                    nn.LeakyReLU())
         self.down1 = Down(32, 64)
         self.down2 = Down(64, 128)
@@ -103,13 +117,15 @@ class UNet3D(nn.Module):
         self.up1 = Up(64, 32)
         if out_channels == 1:
             self.output = nn.Sequential(nn.Conv3d(32, 1, 3, padding=1, bias=False),
+                                        nn.BatchNorm3d(1),
                                         nn.ReLU(),
                                         nn.Conv3d(1, 1, 1),
                                         nn.Sigmoid())
         elif out_channels > 1:
             self.output = nn.Sequential(nn.Conv3d(32, out_channels, 3, padding=1, bias=False),
+                                        nn.BatchNorm3d(out_channels),
                                         nn.ReLU(),
-                                        nn.Conv3d(1, 1, 1),
+                                        nn.Conv3d(out_channels, out_channels, 1),
                                         nn.Softmax())
         else:
             print('错误：网络参数[out_classes]设置错误，应当≥1。')
@@ -131,6 +147,9 @@ class ProjectionSegmentation(nn.Module):
         super().__init__()
         self.img_input = nn.Sequential(nn.Conv2d(1, 32, 3, padding=1, bias=False),
                                        nn.BatchNorm2d(32),
+                                       nn.LeakyReLU(),
+                                       nn.Conv2d(32, 32, 3, padding=1, bias=False),
+                                       nn.BatchNorm2d(32),
                                        nn.LeakyReLU())
         self.img_down1 = Down(32, 64, True)
         self.img_down2 = Down(64, 128, True)
@@ -138,6 +157,9 @@ class ProjectionSegmentation(nn.Module):
         self.img_down4 = Down(256, 512, True)
 
         self.pj_input = nn.Sequential(nn.Conv2d(1, 32, 3, padding=1, bias=False),
+                                      nn.BatchNorm2d(32),
+                                      nn.LeakyReLU(),
+                                      nn.Conv2d(32, 32, 3, padding=1, bias=False),
                                       nn.BatchNorm2d(32),
                                       nn.LeakyReLU())
         self.pj_down1 = Down(32, 64, True)
@@ -151,6 +173,7 @@ class ProjectionSegmentation(nn.Module):
         self.up1 = Up(64, 32, True)
 
         self.output = nn.Sequential(nn.Conv2d(32, 1, 3, padding=1, bias=False),
+                                    nn.BatchNorm2d(1),
                                     nn.ReLU(),
                                     nn.Conv2d(1, 1, 1),
                                     nn.Sigmoid())
@@ -161,6 +184,11 @@ class ProjectionSegmentation(nn.Module):
         img_x3 = self.img_down2(img_x2)
         img_x4 = self.img_down3(img_x3)
         img_x5 = self.img_down4(img_x4)
+        pj_x1 = self.pj_input()
+        pj_x2 = self.pj_down1(pj_x1)
+        pj_x3 = self.pj_down2(pj_x2)
+        pj_x4 = self.pj_down3(pj_x3)
+        pj_x5 = self.pj_down4(pj_x4)
         x = self.up4(x, x4)
         x = self.up3(x, x3)
         x = self.up2(x, x2)

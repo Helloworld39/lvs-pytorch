@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.optim as optim
 import data
 import shutil
+import evaluation as ev
 from model import UNet2D, UNet3D
 
 
@@ -147,8 +148,9 @@ class Train:
             self.loss_arr['train_loss'].append(epoch_loss)
 
             if self.valid_datasets:
-                val_loss = self.validate()
-                print('time: ', int(time.time() - start_time), 'train_loss: ', epoch_loss, 'valid_loss: ', val_loss)
+                val_loss, d_score = self.validate()
+                print('time: ', int(time.time() - start_time), 'train_loss: ', epoch_loss, 'valid_loss: ', val_loss,
+                      'valid_dice: ', d_score)
             else:
                 print('time: ', int(time.time() - start_time), 'train_loss: ', epoch_loss)
             if min_loss > epoch_loss:
@@ -169,6 +171,7 @@ class Train:
         """
         step = 0
         valid_loss = 0
+        dice_score = 0
         with torch.no_grad():
             self.model.eval()
             for _, (v_x, v_y) in enumerate(self.valid_datasets):
@@ -179,11 +182,14 @@ class Train:
                 out = self.model(v_x)
                 loss = self.criterion(out, v_y)
                 valid_loss += loss.item()
+                dice_score += ev.dice_score(out, v_y)
 
             valid_loss = valid_loss / step
+            dice_score = dice_score / step
             self.loss_arr['valid_loss'].append(valid_loss)
+
         torch.cuda.empty_cache()
-        return valid_loss
+        return valid_loss, dice_score
 
     def show_loss_arr(self):
         print('train loss: \n', self.loss_arr['train_loss'])

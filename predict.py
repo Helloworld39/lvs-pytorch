@@ -2,6 +2,7 @@ import os.path
 import torch
 import torch.nn as nn
 import data
+import evaluation as ev
 from model import UNet2D, UNet3D
 from torchvision.transforms import transforms
 
@@ -72,6 +73,7 @@ class Predict:
         print('device: ', self.device)
         step = 0
         test_loss = 0
+        test_dice = 0
         self.model.load_state_dict(torch.load(self.model_dir))
         with torch.no_grad():
             self.model.eval()
@@ -86,9 +88,13 @@ class Predict:
                 loss = self.criterion(out, t_y)
                 test_loss += loss.item()
 
+                d_score = ev.dice_score(out, t_y)
+                test_dice += d_score
+
                 self.save_result(out)
 
         test_loss = test_loss / step
+        test_dice = test_dice / step
         print('Test Loss: ', test_loss)
 
     def save_result(self, mat: torch.Tensor):

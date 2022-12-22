@@ -108,6 +108,17 @@ def get_ct_index(dataset_name: str) -> list:
                 18657, 18791, 18828, 18980, 19021, 19155, 19202, 19229, 19363, 19397, 19427, 19561, 19609, 19757,
                 19791, 19846, 19984, 20036, 20133, 20182, 20230, 20358, 20445, 20613, 20660, 20710, 20760, 20791,
                 20838, 20952, 21121]
+    elif dataset_name == 'company':
+        return [1, 418, 712, 842, 1185, 1475, 1764, 2114, 2364, 2634, 2869, 2996, 3269, 3424, 3641, 4366, 4649, 4948,
+                5379, 5875, 6180, 6555, 6780, 6998, 7219, 7448, 7695, 8898, 9274, 9731, 9936, 10252, 10489, 10890,
+                11306, 11578, 11903, 12462, 12798, 13019, 13357, 13574, 13881, 13998, 14259, 14566, 14923, 15178,
+                15345, 15746, 15991, 16224, 16354, 16579, 17155, 17440, 17770, 18103, 18430, 18611, 18723, 18940,
+                19177, 19515, 19725, 20090, 20384, 20710, 21003, 21228, 21453, 21748, 21868, 22205, 22520, 22794,
+                23087, 23508, 23620, 23725, 23955, 24195, 24642, 25085, 25558, 25713, 26053, 26327, 26704, 26984,
+                27300, 27533, 27838, 27965, 28289]
+    elif dataset_name == '3dircadb':
+        return [1, 130, 302, 502, 593, 732, 867, 1018, 1142, 1253, 1375, 1507, 1767, 1889, 2002, 2127, 2282, 2401,
+                2475, 2599, 2824]
     else:
         return []
 
@@ -140,13 +151,18 @@ def read_image_to_tensor(image_dir: str) -> torch.Tensor:
 
 
 def create_4d_tensor_dataset(dataset_name, data_dir, start, end, **kwargs):
+    """
+    待优化的方法
+    具体问题在于使用torch.cat()消耗的内存过高，使用的内存是数据所占内存的将近4倍，需要优化
+    """
     input_type = 0
     if 'input_type' in kwargs:
         input_type = kwargs['input_type']
         if type(input_type) is not int:
             input_type = 0
     x_dir, y_dir = data_dir
-    x_list, y_list = [], []
+    first_read = True
+    x_mat, y_mat = [], []
     for i in range(start, end):
         image_x_dir = os.path.join(x_dir, str(i)+'.png')
         image_y_dir = os.path.join(y_dir, str(i)+'.png')
@@ -155,25 +171,34 @@ def create_4d_tensor_dataset(dataset_name, data_dir, start, end, **kwargs):
             temp_y_dir = os.path.join(y_dir, 'label_pj', str(i)+'.png')
             x_arr = torch.cat([read_image_to_tensor(image_x_dir), read_image_to_tensor(temp_x_dir)], dim=0)
             y_arr = torch.cat([read_image_to_tensor(image_y_dir), read_image_to_tensor(temp_y_dir)], dim=0)
-            x_list.append(torch.unsqueeze(x_arr, 0))
-            y_list.append(torch.unsqueeze(y_arr, 0))
+            if first_read:
+                x_mat, y_mat = torch.unsqueeze(x_arr, dim=0), torch.unsqueeze(y_arr, dim=0)
+                first_read = False
+            else:
+                x_mat = torch.cat([x_mat, torch.unsqueeze(x_arr, dim=0)], dim=0)
+                y_mat = torch.cat([y_mat, torch.unsqueeze(y_arr, dim=0)], dim=0)
         elif input_type == 2:
             temp_x_dir = os.path.join(x_dir, 'image_pj_16', str(i) + '.png')
             temp_y_dir = os.path.join(y_dir, 'label_pj_16', str(i) + '.png')
             x_arr = torch.cat([read_image_to_tensor(image_x_dir), read_image_to_tensor(temp_x_dir)], dim=0)
             y_arr = torch.cat([read_image_to_tensor(image_y_dir), read_image_to_tensor(temp_y_dir)], dim=0)
-            x_list.append(torch.unsqueeze(x_arr, 0))
-            y_list.append(torch.unsqueeze(y_arr, 0))
+            if first_read:
+                x_mat, y_mat = torch.unsqueeze(x_arr, dim=0), torch.unsqueeze(y_arr, dim=0)
+                first_read = False
+            else:
+                x_mat = torch.cat([x_mat, torch.unsqueeze(x_arr, dim=0)], dim=0)
+                y_mat = torch.cat([y_mat, torch.unsqueeze(y_arr, dim=0)], dim=0)
         else:
             x_arr = read_image_to_tensor(image_x_dir)
             y_arr = read_image_to_tensor(image_y_dir)
-            x_list.append(torch.unsqueeze(x_arr, 0))
-            y_list.append(torch.unsqueeze(y_arr, 0))
+            if first_read:
+                x_mat, y_mat = torch.unsqueeze(x_arr, dim=0), torch.unsqueeze(y_arr, dim=0)
+                first_read = False
+            else:
+                x_mat = torch.cat([x_mat, torch.unsqueeze(x_arr, dim=0)], dim=0)
+                y_mat = torch.cat([y_mat, torch.unsqueeze(y_arr, dim=0)], dim=0)
 
-    x_list = torch.cat(x_list, dim=0)
-    y_list = torch.cat(y_list, dim=0)
-
-    dataset = TensorDataset(x_list, y_list)
+    dataset = TensorDataset(x_mat, y_mat)
     torch.save(dataset, dataset_name)
     print('已生成数据集', dataset_name)
 
@@ -181,8 +206,9 @@ def create_4d_tensor_dataset(dataset_name, data_dir, start, end, **kwargs):
 def create_5d_tensor_dataset(dataset_name, data_dir, patch_size, start, end):
     x_dir, y_dir = data_dir
     i, j = 0, start
-    x_list, y_list = [], []
+    x_mat, y_mat = [], []
     x_patch, y_patch = [], []
+    first_read = True
     while j < end:
         if i == 0:
             x_patch, y_patch = [], []
@@ -196,8 +222,12 @@ def create_5d_tensor_dataset(dataset_name, data_dir, patch_size, start, end):
             i = 0
             x_patch = torch.cat(x_patch, dim=1)
             y_patch = torch.cat(y_patch, dim=1)
-            x_list.append(torch.unsqueeze(x_patch, 0))
-            y_list.append(torch.unsqueeze(y_patch, 0))
+            if first_read:
+                x_mat, y_mat = torch.unsqueeze(x_patch, dim=0), torch.unsqueeze(y_patch, dim=0)
+                first_read = False
+            else:
+                x_mat = torch.cat([x_mat, torch.unsqueeze(x_patch, dim=0)], dim=0)
+                y_mat = torch.cat([y_mat, torch.unsqueeze(y_patch, dim=0)], dim=0)
 
         j += 1
     print('剩余', i, '个切片未放入数据集')
@@ -207,13 +237,14 @@ def create_5d_tensor_dataset(dataset_name, data_dir, patch_size, start, end):
         i += 1
     x_patch = torch.cat(x_patch, dim=1)
     y_patch = torch.cat(y_patch, dim=1)
-    x_list.append(torch.unsqueeze(x_patch, 0))
-    y_list.append(torch.unsqueeze(y_patch, 0))
+    if first_read:
+        x_mat, y_mat = torch.unsqueeze(x_patch, dim=0), torch.unsqueeze(y_patch, dim=0)
+        first_read = False
+    else:
+        x_mat = torch.cat([x_mat, torch.unsqueeze(x_patch, dim=0)], dim=0)
+        y_mat = torch.cat([y_mat, torch.unsqueeze(y_patch, dim=0)], dim=0)
 
-    x_list = torch.cat(x_list, dim=0)
-    y_list = torch.cat(y_list, dim=0)
-
-    dataset = TensorDataset(x_list, y_list)
+    dataset = TensorDataset(x_mat, y_mat)
     torch.save(dataset, dataset_name)
     print('已生成数据集', dataset_name)
 
