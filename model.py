@@ -65,14 +65,14 @@ class UNet2D(nn.Module):
                                    nn.Conv2d(32, 32, 3, padding=1, bias=False),
                                    nn.BatchNorm2d(32),
                                    nn.LeakyReLU())
-        self.down1 = Down(32, 64, True)
-        self.down2 = Down(64, 128, True)
-        self.down3 = Down(128, 256, True)
-        self.down4 = Down(256, 512, True)
-        self.up4 = Up(512, 256, True)
-        self.up3 = Up(256, 128, True)
-        self.up2 = Up(128, 64, True)
-        self.up1 = Up(64, 32, True)
+        self.down1 = Down(32, 64, is_2d=True)
+        self.down2 = Down(64, 128, is_2d=True)
+        self.down3 = Down(128, 256, is_2d=True)
+        self.down4 = Down(256, 512, is_2d=True)
+        self.up4 = Up(512, 256, is_2d=True)
+        self.up3 = Up(256, 128, is_2d=True)
+        self.up2 = Up(128, 64, is_2d=True)
+        self.up1 = Up(64, 32, is_2d=True)
         if out_channels == 1:
             self.output = nn.Sequential(nn.Conv2d(32, 1, 3, padding=1, bias=False),
                                         nn.BatchNorm2d(1),

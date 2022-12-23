@@ -174,14 +174,12 @@ def create_4d_tensor_dataset(dataset_name, data_dir, start, end, **kwargs):
         image_y_dir = os.path.join(y_dir, str(i)+'.png')
         if input_type == 1:
             temp_x_dir = os.path.join(x_dir, 'image_pj', str(i)+'.png')
-            temp_y_dir = os.path.join(y_dir, 'label_pj', str(i)+'.png')
             x_arr = torch.cat([read_image_to_tensor(image_x_dir), read_image_to_tensor(temp_x_dir)], dim=0)
-            y_arr = torch.cat([read_image_to_tensor(image_y_dir), read_image_to_tensor(temp_y_dir)], dim=0)
+            y_arr = read_image_to_tensor(image_y_dir)
         elif input_type == 2:
             temp_x_dir = os.path.join(x_dir, 'image_pj_16', str(i) + '.png')
-            temp_y_dir = os.path.join(y_dir, 'label_pj_16', str(i) + '.png')
             x_arr = torch.cat([read_image_to_tensor(image_x_dir), read_image_to_tensor(temp_x_dir)], dim=0)
-            y_arr = torch.cat([read_image_to_tensor(image_y_dir), read_image_to_tensor(temp_y_dir)], dim=0)
+            y_arr = read_image_to_tensor(image_y_dir)
         else:
             x_arr = read_image_to_tensor(image_x_dir)
             y_arr = read_image_to_tensor(image_y_dir)
