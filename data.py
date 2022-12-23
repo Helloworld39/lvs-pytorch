@@ -162,9 +162,9 @@ def create_4d_tensor_dataset(dataset_name, data_dir, start, end, **kwargs):
         if type(input_type) is not int:
             input_type = 0
     if 'memory_adjust' in kwargs:
-        input_type = kwargs['input_type']
-        if type(input_type) is not int:
-            input_type = 1000
+        memory_threshold = kwargs['memory_adjust']
+        if type(memory_threshold) is not int:
+            memory_threshold = 1000
     x_dir, y_dir = data_dir
     x_list, y_list = [], []
     x_mat, y_mat = [], []
