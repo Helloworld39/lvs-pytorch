@@ -156,14 +156,20 @@ def create_4d_tensor_dataset(dataset_name, data_dir, start, end, **kwargs):
     具体问题在于使用torch.cat()消耗的内存过高，使用的内存是数据所占内存的将近4倍，需要优化
     """
     input_type = 0
+    memory_threshold = 1000
     if 'input_type' in kwargs:
         input_type = kwargs['input_type']
         if type(input_type) is not int:
             input_type = 0
+    if 'memory_adjust' in kwargs:
+        input_type = kwargs['input_type']
+        if type(input_type) is not int:
+            input_type = 1000
     x_dir, y_dir = data_dir
-    first_read = True
+    x_list, y_list = [], []
     x_mat, y_mat = [], []
     for i in range(start, end):
+        print('Slice: ', i, '/', end, end='\r')
         image_x_dir = os.path.join(x_dir, str(i)+'.png')
         image_y_dir = os.path.join(y_dir, str(i)+'.png')
         if input_type == 1:
@@ -171,32 +177,23 @@ def create_4d_tensor_dataset(dataset_name, data_dir, start, end, **kwargs):
             temp_y_dir = os.path.join(y_dir, 'label_pj', str(i)+'.png')
             x_arr = torch.cat([read_image_to_tensor(image_x_dir), read_image_to_tensor(temp_x_dir)], dim=0)
             y_arr = torch.cat([read_image_to_tensor(image_y_dir), read_image_to_tensor(temp_y_dir)], dim=0)
-            if first_read:
-                x_mat, y_mat = torch.unsqueeze(x_arr, dim=0), torch.unsqueeze(y_arr, dim=0)
-                first_read = False
-            else:
-                x_mat = torch.cat([x_mat, torch.unsqueeze(x_arr, dim=0)], dim=0)
-                y_mat = torch.cat([y_mat, torch.unsqueeze(y_arr, dim=0)], dim=0)
         elif input_type == 2:
             temp_x_dir = os.path.join(x_dir, 'image_pj_16', str(i) + '.png')
             temp_y_dir = os.path.join(y_dir, 'label_pj_16', str(i) + '.png')
             x_arr = torch.cat([read_image_to_tensor(image_x_dir), read_image_to_tensor(temp_x_dir)], dim=0)
             y_arr = torch.cat([read_image_to_tensor(image_y_dir), read_image_to_tensor(temp_y_dir)], dim=0)
-            if first_read:
-                x_mat, y_mat = torch.unsqueeze(x_arr, dim=0), torch.unsqueeze(y_arr, dim=0)
-                first_read = False
-            else:
-                x_mat = torch.cat([x_mat, torch.unsqueeze(x_arr, dim=0)], dim=0)
-                y_mat = torch.cat([y_mat, torch.unsqueeze(y_arr, dim=0)], dim=0)
         else:
             x_arr = read_image_to_tensor(image_x_dir)
             y_arr = read_image_to_tensor(image_y_dir)
-            if first_read:
-                x_mat, y_mat = torch.unsqueeze(x_arr, dim=0), torch.unsqueeze(y_arr, dim=0)
-                first_read = False
-            else:
-                x_mat = torch.cat([x_mat, torch.unsqueeze(x_arr, dim=0)], dim=0)
-                y_mat = torch.cat([y_mat, torch.unsqueeze(y_arr, dim=0)], dim=0)
+        x_list.append(x_arr)
+        y_list.append(y_arr)
+        if (i % memory_threshold) == 0 or i == (end-1):
+            x_list = torch.stack(x_list, dim=0)
+            x_mat.append(x_list)
+            y_list = torch.stack(y_list, dim=0)
+            y_mat.append(y_list)
+            x_list, y_list = [], []
+    x_mat, y_mat = torch.cat(x_mat, dim=0), torch.cat(y_mat, dim=0)
 
     dataset = TensorDataset(x_mat, y_mat)
     torch.save(dataset, dataset_name)

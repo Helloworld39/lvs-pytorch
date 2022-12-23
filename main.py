@@ -23,10 +23,10 @@ valid_dataset = data.data_loader(dataset_root_dir+'/valid.pth', 16)
 
 train = Train(model='unet_2in_1out',
               criterion='bce',
-              optimizer='adam', lr=1e-4,
+              optimizer='adam', lr=1e-3,
               scheduler='step_lr',
               epochs=150,
-              checkpoint_dir=dataset_root_dir+'checkpoint/unet_msdc_150_pj',
+              checkpoint_dir=dataset_root_dir+'/checkpoint/unet_msdc_150_pj',
               model_dir='./models/unet_msdc_150_pj.pth',
               train_datasets=train_dataset,
               valid_datasets=valid_dataset)
