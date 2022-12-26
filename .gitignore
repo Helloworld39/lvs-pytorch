@@ -154,7 +154,9 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 .models/
+.out/
 
 # some utils files
 test.py
 dcm_kit.py
+experiment_result.xlsx

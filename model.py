@@ -147,3 +147,53 @@ class UNet3D(nn.Module):
 class DoubleEncoderSingleDecoderNetwork(nn.Module):
     def __init__(self):
         super().__init__()
+        self.img_input = nn.Sequential(nn.Conv2d(1, 32, 3, padding=1, bias=False),
+                                       nn.BatchNorm2d(32),
+                                       nn.LeakyReLU(),
+                                       nn.Conv2d(32, 32, 3, padding=1, bias=False),
+                                       nn.BatchNorm2d(32),
+                                       nn.LeakyReLU())
+        self.img_down1 = Down(32, 64, is_2d=True)
+        self.img_down2 = Down(64, 128, is_2d=True)
+        self.img_down3 = Down(128, 256, is_2d=True)
+        self.img_down4 = Down(256, 512, is_2d=True)
+
+        self.pj_input = nn.Sequential(nn.Conv2d(1, 32, 3, padding=1, bias=False),
+                                      nn.BatchNorm2d(32),
+                                      nn.LeakyReLU(),
+                                      nn.Conv2d(32, 32, 3, padding=1, bias=False),
+                                      nn.BatchNorm2d(32),
+                                      nn.LeakyReLU())
+        self.pj_down1 = Down(32, 64, is_2d=True)
+        self.pj_down2 = Down(64, 128, is_2d=True)
+        self.pj_down3 = Down(128, 256, is_2d=True)
+
+        self.up4 = Up(512, 256, 256*3, is_2d=True)
+        self.up3 = Up(256, 128, 128*3, is_2d=True)
+        self.up2 = Up(128, 64, 64*3, is_2d=True)
+        self.up1 = Up(64, 32, 32*3, is_2d=True)
+
+        self.output = nn.Sequential(nn.Conv2d(32, 1, 3, padding=1, bias=False),
+                                    nn.BatchNorm2d(1),
+                                    nn.ReLU(),
+                                    nn.Conv2d(1, 1, 1),
+                                    nn.Sigmoid())
+
+    def forward(self, x):
+        img, pj = torch.split(x, 1, dim=1)
+        img_x1 = self.img_input(img)
+        img_x2 = self.img_down1(img_x1)
+        img_x3 = self.img_down2(img_x2)
+        img_x4 = self.img_down3(img_x3)
+        x = self.img_down4(img_x4)
+
+        pj_x1 = self.pj_input(pj)
+        pj_x2 = self.pj_down1(pj_x1)
+        pj_x3 = self.pj_down2(pj_x2)
+        pj_x4 = self.pj_down3(pj_x3)
+
+        x = self.up4(x, img_x4, pj_x4)
+        x = self.up3(x, img_x3, pj_x3)
+        x = self.up2(x, img_x2, pj_x2)
+        x = self.up1(x, img_x1, pj_x1)
+        return self.output(x)

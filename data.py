@@ -130,6 +130,11 @@ def dataset_dir_manager(dataset_name, where='autodl', is_root=False) -> Union[st
             dataset_root = 'D:/Github/MSDC'
         else:
             dataset_root = '/root/autodl-tmp/msdc'
+    elif dataset_name == '3dircadb':
+        if where == 'local':
+            dataset_root = 'D:/Github/3Dircadb1'
+        else:
+            dataset_root = '/root/autodl-tmp/3dircadb'
     else:
         print('没有该数据集', dataset_name)
         exit(-1)
@@ -199,6 +204,15 @@ def create_4d_tensor_dataset(dataset_name, data_dir, start, end, **kwargs):
 
 
 def create_5d_tensor_dataset(dataset_name, data_dir, patch_size, start, end):
+    """
+    生成3D数据集，有待重写
+    :param dataset_name:
+    :param data_dir:
+    :param patch_size:
+    :param start:
+    :param end:
+    :return:
+    """
     x_dir, y_dir = data_dir
     i, j = 0, start
     x_mat, y_mat = [], []
@@ -252,14 +266,3 @@ def data_loader(dataset_dir: str, batch_size=16, is_shuffled=False) -> ():
         else:
             return DataLoader(dataset, batch_size, False)
     return f
-
-
-def save_dataset(dataset_name, dst_root_dir):
-    x_dir, y_dir = dataset_dir_manager(dataset_name)
-    index_list = get_ct_index(dataset_name)
-    create_4d_tensor_dataset(dst_root_dir + '/msdc_4d_train.pth', (x_dir, y_dir), index_list[0], index_list[101])
-    create_4d_tensor_dataset(dst_root_dir + '/msdc_4d_valid.pth', (x_dir, y_dir), index_list[101], index_list[103])
-    create_4d_tensor_dataset(dst_root_dir + '/msdc_4d_test.pth', (x_dir, y_dir), index_list[298], index_list[303])
-    create_5d_tensor_dataset(dst_root_dir + '/msdc_5d_train.pth', (x_dir, y_dir), 20, index_list[0], index_list[101])
-    create_5d_tensor_dataset(dst_root_dir + '/msdc_5d_valid.pth', (x_dir, y_dir), 20, index_list[101], index_list[103])
-    create_5d_tensor_dataset(dst_root_dir + '/msdc_5d_test.pth', (x_dir, y_dir), 20, index_list[298], index_list[303])

@@ -1,12 +1,14 @@
 import os
 import time
+from typing import Tuple
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import data
 import shutil
 import evaluation as ev
-from model import UNet2D, UNet3D
+from model import UNet2D, UNet3D, DoubleEncoderSingleDecoderNetwork
 
 
 class Train:
@@ -23,11 +25,15 @@ class Train:
         # model设定
         if 'model' in kwargs:
             if kwargs['model'] == 'unet':
-                self.model = UNet2D().to(self.device)
+                self.in_channels = kwargs['in_channels'] if 'in_channels' in kwargs else 1
+                self.out_channels = kwargs['out_channels'] if 'out_channels' in kwargs else 1
+                self.model = UNet2D(self.in_channels, self.out_channels).to(self.device)
             elif kwargs['model'] == 'unet3d':
-                self.model = UNet3D().to(self.device)
-            elif kwargs['model'] == 'unet_2in_1out':
-                self.model = UNet2D(in_channels=2, out_channels=1).to(self.device)
+                self.in_channels = kwargs['in_channels'] if 'in_channels' in kwargs else 1
+                self.out_channels = kwargs['out_channels'] if 'out_channels' in kwargs else 1
+                self.model = UNet3D(self.in_channels, self.out_channels).to(self.device)
+            elif kwargs['model'] == '2in1out':
+                self.model = DoubleEncoderSingleDecoderNetwork().to(self.device)
             else:
                 print('错误：不存在的模型。')
                 exit(3)
@@ -164,7 +170,7 @@ class Train:
         print('Best Epoch: ', best_epoch)
         shutil.copy(os.path.join(self.checkpoint_dir, str(best_epoch) + '.pth'), self.model_dir)
 
-    def validate(self) -> float:
+    def validate(self) -> tuple[float, float]:
         """
         验证过程
         :return: 验证集loss
