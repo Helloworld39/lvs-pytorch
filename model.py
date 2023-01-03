@@ -8,17 +8,17 @@ class Down(nn.Module):
         if is_2d:
             self.conv = nn.Sequential(nn.Conv2d(in_channels, out_channels, 4, 2, 1, bias=False),
                                       nn.BatchNorm2d(out_channels),
-                                      nn.LeakyReLU(),
+                                      nn.ReLU(),
                                       nn.Conv2d(out_channels, out_channels, 3, padding=1, bias=False),
                                       nn.BatchNorm2d(out_channels),
-                                      nn.LeakyReLU())
+                                      nn.ReLU())
         else:
             self.conv = nn.Sequential(nn.Conv3d(in_channels, out_channels, 4, 2, 1, bias=False),
                                       nn.BatchNorm3d(out_channels),
-                                      nn.LeakyReLU(),
+                                      nn.ReLU(),
                                       nn.Conv3d(out_channels, out_channels, 3, padding=1, bias=False),
                                       nn.BatchNorm3d(out_channels),
-                                      nn.LeakyReLU())
+                                      nn.ReLU())
 
     def forward(self, x):
         return self.conv(x)
@@ -61,10 +61,10 @@ class UNet2D(nn.Module):
         super().__init__()
         self.input = nn.Sequential(nn.Conv2d(in_channels, 32, 3, padding=1, bias=False),
                                    nn.BatchNorm2d(32),
-                                   nn.LeakyReLU(),
+                                   nn.ReLU(),
                                    nn.Conv2d(32, 32, 3, padding=1, bias=False),
                                    nn.BatchNorm2d(32),
-                                   nn.LeakyReLU())
+                                   nn.ReLU())
         self.down1 = Down(32, 64, is_2d=True)
         self.down2 = Down(64, 128, is_2d=True)
         self.down3 = Down(128, 256, is_2d=True)
@@ -107,10 +107,10 @@ class UNet3D(nn.Module):
         super().__init__()
         self.input = nn.Sequential(nn.Conv3d(in_channels, 32, 3, padding=1, bias=False),
                                    nn.BatchNorm3d(32),
-                                   nn.LeakyReLU(),
+                                   nn.ReLU(),
                                    nn.Conv3d(32, 32, 3, padding=1, bias=False),
-                                   nn.BatchNorm2d(32),
-                                   nn.LeakyReLU())
+                                   nn.BatchNorm3d(32),
+                                   nn.ReLU())
         self.down1 = Down(32, 64)
         self.down2 = Down(64, 128)
         self.down3 = Down(128, 256)
@@ -149,10 +149,10 @@ class DoubleEncoderSingleDecoderNetwork(nn.Module):
         super().__init__()
         self.img_input = nn.Sequential(nn.Conv2d(1, 32, 3, padding=1, bias=False),
                                        nn.BatchNorm2d(32),
-                                       nn.LeakyReLU(),
+                                       nn.ReLU(),
                                        nn.Conv2d(32, 32, 3, padding=1, bias=False),
                                        nn.BatchNorm2d(32),
-                                       nn.LeakyReLU())
+                                       nn.ReLU())
         self.img_down1 = Down(32, 64, is_2d=True)
         self.img_down2 = Down(64, 128, is_2d=True)
         self.img_down3 = Down(128, 256, is_2d=True)
@@ -160,10 +160,10 @@ class DoubleEncoderSingleDecoderNetwork(nn.Module):
 
         self.pj_input = nn.Sequential(nn.Conv2d(1, 32, 3, padding=1, bias=False),
                                       nn.BatchNorm2d(32),
-                                      nn.LeakyReLU(),
+                                      nn.ReLU(),
                                       nn.Conv2d(32, 32, 3, padding=1, bias=False),
                                       nn.BatchNorm2d(32),
-                                      nn.LeakyReLU())
+                                      nn.ReLU())
         self.pj_down1 = Down(32, 64, is_2d=True)
         self.pj_down2 = Down(64, 128, is_2d=True)
         self.pj_down3 = Down(128, 256, is_2d=True)

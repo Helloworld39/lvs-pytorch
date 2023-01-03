@@ -266,3 +266,26 @@ def data_loader(dataset_dir: str, batch_size=16, is_shuffled=False) -> ():
         else:
             return DataLoader(dataset, batch_size, False)
     return f
+
+
+def create_compare_map(predict_dir, target_dir, dst_dir):
+    if not os.path.exists(dst_dir):
+        os.makedirs(dst_dir)
+    for filename in os.listdir(predict_dir):
+        pre = cv.imread(os.path.join(predict_dir, filename), cv.IMREAD_GRAYSCALE)
+        tar = cv.imread(os.path.join(target_dir, filename), cv.IMREAD_GRAYSCALE)
+        pre[pre != 0] = 1
+        tar[tar != 0] = 2
+        inter = pre + tar
+
+        inter[inter == 1] = 70
+        inter[inter == 2] = 200
+        inter[inter == 3] = 128
+        inter = cv.applyColorMap(inter, cv.COLORMAP_TURBO)
+
+        cv.imwrite(os.path.join(dst_dir, filename), inter)
+        print('已完成图片：', filename)
+
+
+if __name__ == '__main__':
+    create_compare_map('./out/unet_msdc_150', 'D:/GitHub/MSDC/labels', 'D:/GitHub/MSDC/compare/unet_nsdc_150')

@@ -24,7 +24,7 @@ valid_dataset = data.data_loader(dataset_root_dir+'/valid.pth', 16)
 train = Train(model='2in1out',
               criterion='bce',
               optimizer='adam', lr=1e-3,
-              scheduler='step_lr',
+              scheduler='step_lr', gamma=0.5,
               epochs=150,
               checkpoint_dir=dataset_root_dir+'/checkpoint/2in1out_msdc_150_pj',
               model_dir='./models/2in1out_msdc_150_pj.pth',
@@ -37,7 +37,7 @@ test_dataset = data.data_loader(dataset_root_dir+'/predict.pth', 16)
 predict = Predict(model='2in1out',
                   criterion='bce',
                   model_dir='./models/2in1out_msdc_150_pj.pth',
-                  output_dir='/root/autodl-tmp/msdc/out/2in1out_msdc_150_pj',
-                  output_index=data.get_ct_index('msdc')[298],
+                  output_dir=dataset_root_dir+'/out/2in1out_msdc_150_pj',
+                  output_index=slice_index_list[298],
                   pre_datasets=test_dataset)
 predict.predict()
