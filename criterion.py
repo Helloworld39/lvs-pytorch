@@ -16,4 +16,3 @@ class DiceLoss(nn.Module):
         dice_score = (2 * intersection + self.ep) / (t1 + t2 + self.ep)
         dice_loss = self.weight * (1 - dice_score)
         return dice_loss
-

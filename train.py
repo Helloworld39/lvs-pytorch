@@ -8,7 +8,7 @@ import torch.optim as optim
 import data
 import shutil
 import evaluation as ev
-from model import UNet2D, UNet3D, DoubleEncoderSingleDecoderNetwork
+from model import UNet2D, UNet3D, DoubleEncoderSingleDecoderNetwork, SingleEncoderDoubleDecoderNetwork
 
 
 class Train:
@@ -34,6 +34,8 @@ class Train:
                 self.model = UNet3D(self.in_channels, self.out_channels).to(self.device)
             elif kwargs['model'] == '2in1out':
                 self.model = DoubleEncoderSingleDecoderNetwork().to(self.device)
+            elif kwargs['model'] == '1in2out':
+                self.model = SingleEncoderDoubleDecoderNetwork().to(self.device)
             else:
                 print('错误：不存在的模型。')
                 exit(3)
@@ -170,7 +172,7 @@ class Train:
         print('Best Epoch: ', best_epoch)
         shutil.copy(os.path.join(self.checkpoint_dir, str(best_epoch) + '.pth'), self.model_dir)
 
-    def validate(self) -> tuple[float, float]:
+    def validate(self):
         """
         验证过程
         :return: 验证集loss

@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import data
 import evaluation as ev
-from model import UNet2D, UNet3D
+from model import UNet2D, UNet3D, SingleEncoderDoubleDecoderNetwork, DoubleEncoderSingleDecoderNetwork
 from torchvision.transforms import transforms
 
 
@@ -28,6 +28,10 @@ class Predict:
                 self.in_channels = kwargs['in_channels'] if 'in_channels' in kwargs else 1
                 self.out_channels = kwargs['out_channels'] if 'out_channels' in kwargs else 1
                 self.model = UNet3D(self.in_channels, self.out_channels).to(self.device)
+            elif kwargs['model'] == '2in1out':
+                self.model = DoubleEncoderSingleDecoderNetwork().to(self.device)
+            elif kwargs['model'] == '1in2out':
+                self.model = SingleEncoderDoubleDecoderNetwork().to(self.device)
             else:
                 print('错误：不存在的模型。')
                 exit(3)

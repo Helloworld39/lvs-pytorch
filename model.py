@@ -197,3 +197,59 @@ class DoubleEncoderSingleDecoderNetwork(nn.Module):
         x = self.up2(x, img_x2, pj_x2)
         x = self.up1(x, img_x1, pj_x1)
         return self.output(x)
+
+
+class SingleEncoderDoubleDecoderNetwork(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.input = nn.Sequential(nn.Conv2d(1, 32, 3, padding=1, bias=False),
+                                   nn.BatchNorm2d(32),
+                                   nn.ReLU(),
+                                   nn.Conv2d(32, 32, 3, padding=1, bias=False),
+                                   nn.BatchNorm2d(32),
+                                   nn.ReLU())
+        self.down1 = Down(32, 64, True)
+        self.down2 = Down(64, 128, True)
+        self.down3 = Down(128, 256, True)
+        self.down4 = Down(256, 512, True)
+
+        self.up4 = Up(512, 256, True)
+        self.up3 = Up(256, 128, True)
+        self.up2 = Up(128, 64, True)
+        self.up1 = Up(64, 32, True)
+        self.output = nn.Sequential(nn.Conv2d(32, 1, 3, padding=1, bias=False),
+                                    nn.BatchNorm2d(1),
+                                    nn.ReLU(),
+                                    nn.Conv2d(1, 1, 1),
+                                    nn.Sigmoid())
+
+        self.pj_up4 = Up(512, 256, 256*3, True)
+        self.pj_up3 = Up(256, 128, 128*3, True)
+        self.pj_up2 = Up(128, 64, 64*3, True)
+        self.pj_up1 = Up(64, 32, 32*3, True)
+        self.pj_out = nn.Sequential(nn.Conv2d(32, 1, 3, padding=1, bias=False),
+                                    nn.BatchNorm2d(1),
+                                    nn.ReLU(),
+                                    nn.Conv2d(1, 1, 1),
+                                    nn.Sigmoid())
+
+    def forward(self, x):
+        x1 = self.input(x)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
+        x4 = self.down3(x3)
+        x = self.down4(x4)
+
+        lb = self.up4(x, x4)
+        pj = self.pj_up4(x, x4, lb)
+        lb = self.up3(lb, x3)
+        pj = self.pj_up3(pj, x3, lb)
+        lb = self.up2(lb, x2)
+        pj = self.pj_up2(pj, x2, lb)
+        lb = self.up1(lb, x1)
+        pj = self.pj_up1(pj, x1, lb)
+
+        lb = self.output(lb)
+        pj = self.pj_out(pj)
+
+        return lb, pj
